@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Post, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  // Req,
+  Res,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import StableDiffusionApi, {
   HiResUpscalerName,
@@ -24,7 +31,7 @@ export class AppController {
       n: number;
       size: string;
     },
-    @Req() req: Request,
+    // @Req() req: Request,
   ) {
     try {
       if (!api) {
@@ -41,8 +48,8 @@ export class AppController {
         });
       }
       // 密钥
-      const token = req.headers.authorization;
-      console.log(token);
+      // const token = req.headers.authorization;
+      // console.log(token);
 
       // 图片大小
       const size = process.env.size?.split('x') ||
@@ -78,7 +85,7 @@ export class AppController {
         return result;
       }
 
-      let res = {
+      const res = {
         created: +new Date(),
         data: [] as Array<{
           revised_prompt: string;
@@ -102,7 +109,7 @@ export class AppController {
 
   @Post('/v1/chat/completions')
   test(@Body() body: any, @Res() res: Response) {
-    console.log(body);
+    // console.log(body);
 
     return res.status(200).json({
       model: body.model,
