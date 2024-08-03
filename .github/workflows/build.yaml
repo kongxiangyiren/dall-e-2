@@ -1,0 +1,50 @@
+name: 打包可执行文件 无鉴图版
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore: # 这里表示忽略的文件或目录，不会触发流程
+      - 'README.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.vscode/**'
+      - '.test/**'
+      - '.dockerignore'
+      - 'Dockerfile'
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.15.0'
+          cache: 'npm'
+
+      - run: npm i
+      - run: npm run build:exe
+
+      - name: Install UPX
+        if: matrix.os == 'windows-latest'
+        uses: crazy-max/ghaction-upx@v3
+        with:
+          install-only: true
+
+      - name: upx windows
+        if: matrix.os == 'windows-latest'
+        run: upx -9 ./dist/hello.exe
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}
+          path: dist/
+          compression-level: 9 # 压缩等级 默认 6
