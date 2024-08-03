@@ -12,8 +12,13 @@ import StableDiffusionApi, {
   SamplerName,
   schedulerName,
 } from './sd-txt2img';
-import { Request, Response } from 'express';
+import {
+  // Request,
+  Response,
+} from 'express';
+import OpenAI from 'openai';
 let api: StableDiffusionApi;
+let client: OpenAI;
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
@@ -32,6 +37,7 @@ export class AppController {
       size: string;
     },
     // @Req() req: Request,
+    @Res() res: Response,
   ) {
     try {
       if (!api) {
@@ -47,6 +53,36 @@ export class AppController {
             : Number(process.env.defaultStepCount),
         });
       }
+      if (
+        process.env.openBaseURL &&
+        process.env.openApiKey &&
+        process.env.openModel
+      ) {
+        if (!client) {
+          client = new OpenAI({
+            baseURL: process.env.openBaseURL,
+            apiKey: process.env.openApiKey,
+          });
+        }
+
+        const chatCompletion = await client.chat.completions.create({
+          messages: [
+            {
+              role: 'system',
+              content:
+                '你是一个翻译引擎，请将文本翻译为英文，只需要翻译不需要解释。',
+            },
+            {
+              role: 'user',
+              content: `请帮我我将如下文字翻译成英文,“${body.prompt}”`,
+            },
+          ],
+          model: process.env.openModel,
+        });
+
+        body.prompt = chatCompletion.choices[0].message.content || body.prompt;
+      }
+
       // 密钥
       // const token = req.headers.authorization;
       // console.log(token);
@@ -82,10 +118,10 @@ export class AppController {
       });
 
       if (result instanceof Error) {
-        return result;
+        return res.status(500).send(result);
       }
 
-      const res = {
+      const list = {
         created: +new Date(),
         data: [] as Array<{
           revised_prompt: string;
@@ -95,15 +131,15 @@ export class AppController {
 
       result.images.forEach((image) => {
         if (image) {
-          res.data.push({
+          list.data.push({
             revised_prompt: body.prompt,
             url: 'data:image/jpeg;base64,' + image,
           });
         }
       });
-      return res;
+      return res.status(200).json(list);
     } catch (error) {
-      return error;
+      return res.status(500).send(error);
     }
   }
 
