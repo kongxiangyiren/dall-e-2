@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   // Req,
   Res,
 } from '@nestjs/common';
@@ -162,5 +163,24 @@ export class AppController {
       ],
       usage: { prompt_tokens: 9, completion_tokens: 10, total_tokens: 19 },
     });
+  }
+
+  @Get('/v1/dashboard/billing/subscription')
+  billing() {
+    const balance = 1;
+    return {
+      object: 'billing_subscription',
+      has_payment_method: true,
+      soft_limit_usd: balance,
+      hard_limit_usd: balance,
+      system_hard_limit_usd: balance,
+      access_until: 0,
+    };
+  }
+
+  @Get('/v1/dashboard/billing/usage')
+  usage(@Query() query: { start_date: string; end_date: string }) {
+    // 使用次数
+    return { object: 'list', total_usage: 0 };
   }
 }
